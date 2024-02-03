@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    
+    <!-- Includi jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        #messaggi-container {
+            margin: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+            max-height: 90vh;
+            overflow: auto;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        .messaggio {
+            background-color: #f2f2f2;
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+
+        .messaggio p {
+            margin: 0;
+        }
+
+        .nome-utente {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .orario-invio {
+            font-size: 12px;
+            color: #777;
+        }
+
+        #input-container {
+            position: fixed;
+            bottom: 0;
+            height: 50px;
+            width: 100%;
+            padding: 10px;
+            background-color: #fff;
+            border-top: 1px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #messaggio-input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="messaggi-container"></div>
+
+    <div id="input-container">
+        <input type="text" id="messaggio-input" placeholder="Inserisci il messaggio...">
+        <button id="invia-messaggio">Invia</button>
+    </div>
+
+    <script>
+        function inviaMessaggio(){
+            const messaggioInput = $("#messaggio-input");
+            const messaggio = messaggioInput.val();
+
+            if (messaggio.trim() !== "") {
+                $.ajax({
+                    url: "https://sitobackend.azurewebsites.net/nuovomessaggio",
+                    method: 'PUT', // Cambiato il metodo a POST
+                    dataType: 'json',
+                    contentType: 'application/json', // Imposta il tipo di contenuto a JSON
+                    data: JSON.stringify({ Messaggio: messaggio, Utente: localStorage.getItem("username") }),
+                    success: function(response) {
+                        // Aggiorna i messaggi dopo l'invio
+                        aggiornaMessaggi();
+                        // Pulisci la textbox dopo l'invio
+                        messaggioInput.val("");
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.error('Errore nella chiamata AJAX:', textStatus, errorThrown);
+                        messagesContainer.empty();
+                    }
+                });
+            }
+        }
+
+        $(document).ready(function() {
+        $("#invia-messaggio").click(inviaMessaggio);
+        
+        $("#messaggio-input").keydown(function(event) {
+            if (event.keyCode === 13) {  // Il codice 13 corrisponde al tasto Invio
+                inviaMessaggio();
+            }
+        })});
+        
+
+        function aggiornaMessaggi() {
+            $.ajax({
+                url: "https://sitobackend.azurewebsites.net/tuttimessaggi",
+                method: 'GET',
+                dataType: 'text',
+                success: function(response) {
+                    const messagesContainer = $("#messaggi-container");
+                    messagesContainer.empty();
+
+                    response = JSON.parse(response);
+                    response.forEach(message => {
+                        const messageDiv = $("<div>").addClass("messaggio");
+                        const usernameElement = $("<p>").addClass("nome-utente").text(`${message.usernameUtente}`);
+                        messageDiv.append(usernameElement);
+                        const messageTextElement = $("<p>").text(`${message.riga}`);
+                        messageDiv.append(messageTextElement);
+                        const oraInvio = new Date(message.oraInvio);
+                        const timestampElement = $("<p>").addClass("orario-invio").text(`Ora: ${oraInvio.toLocaleString()}`);
+                        messageDiv.append(timestampElement);
+
+                        messagesContainer.append(messageDiv);
+                    });
+
+                    $("#messaggi-container").scrollTop = $("#messaggi-container").scrollHeight;
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error('Errore nella chiamata AJAX:', textStatus, errorThrown);
+                    $("messaggi-container").empty();
+                }
+            });
+        }
+
+        // Chiamata iniziale per ottenere i messaggi all'avvio della pagina
+        aggiornaMessaggi();
+
+        // Aggiorna i messaggi ogni 3 secondi
+        setInterval(aggiornaMessaggi, 3000);
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 50px;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        #loginForm {
+            max-width: 300px;
+            margin: auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: #fff;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #message {
+            color: #ff0000;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Login</h2>
+
+    <div id="message"></div>
+
+    <form id="loginForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+
+        <button id="accedi" type="button">Login</button>
+    </form>
+
+    <script>
+
+        
+
+        async function login() {
+            const usernameInput = document.getElementById("username");
+            const passwordInput = document.getElementById("password");
+            const messageDiv = document.getElementById('message');
+
+            const username = usernameInput.value;
+            const password = passwordInput.value;
+
+            try {
+                // Esegui la richiesta POST
+                const response = await fetch('https://sitobackend.azurewebsites.net/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+                });
+
+                if (response.ok) {
+                    // Se la risposta è positiva (status code 200), reindirizza alla pagina chat.html
+                    localStorage.setItem("username", username);
+                    window.location.href = 'chat.html';
+                } else if (response.status === 404 || response.status === 400) {
+                    // Se la risposta è 404 o 400, mostra un messaggio di errore
+                    messageDiv.innerText = 'Errore: Username o password sbagliati.';
+                } else {
+                    // Gestisci altri casi di errore
+                    messageDiv.innerText = 'Errore durante il login.';
+                }
+            } catch (error) {
+                console.error('Errore:', error);
+            }
+        }
+
+        $(document).ready(function() {
+        $("#accedi").click(login);
+        
+        $("#password").keydown(function(event) {
+            if (event.keyCode === 13) {  // Il codice 13 corrisponde al tasto Invio
+                login();
+            }
+        })});
+    </script>
+
+</body>
+</html>
